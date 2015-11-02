@@ -13,7 +13,7 @@
 #
 #
 ##############GLOBAL PARAM#################
-INSTALL_LOCATION=/u01/InstallPack/
+INSTALL_LOCATION=/u01/InstallPack/database
 ORACLE_BASE=/u01/app/oracle/
 TEMP_LOCATION=/tmp/
 PRODUCT_NAME="dialogic ORACLE Install"
@@ -32,6 +32,9 @@ then echo "Install yum $PREINSTELL_RPM_NAME";
 sudo yum localinstal $INSTALL_LOCATION/$PREINSTELL_RPM_NAME;
 fi
 
+#fix /tmp
+sudo sh -c "chmod a+rwx /tmp"
+
 # create user oracle
 if [[ $DEBUG -ne 0 ]] ; then echo "Create user oracle"; fi
 sudo /usr/sbin/groupadd oinstall
@@ -45,20 +48,25 @@ EOF
 
 # fix ~oracle/.bash_profile
 if [[ $DEBUG -ne 0 ]] ; then echo "fix ~oracle/.bash_profile"; fi
-sudo cp ~oracle/.bash_profile ~oracle/.bash_profile.$(date +%F_%R).old
-sudo echo "##add by $PRODUCT_NAME install "  >> ~oracle/.bash_profile
-sudo echo "export ORACLE_BASE=$ORACLE_BASE" >>  ~oracle/.bash_profile
-sudo echo "export ORACLE_HOME=\$ORACLE_BASE/product/11.2.0/db_1" >> ~oracle/.bash_profile
-sudo echo "export ORACLE_SID=$ORACLE_SID " >>  ~oracle/.bash_profile
-sudo echo "PATH=\$PATH:\$ORACLE_HOME/bin/" >>  ~oracle/.bash_profile
+#make backup
+sudo -u oracle -H sh -c "cp ~oracle/.bash_profile ~oracle/.bash_profile.$(date +%F_%R).old"
+# add env for bash
+sudo -u oracle -H sh -c "echo "##add by $PRODUCT_NAME install "  >> ~oracle/.bash_profile"
+sudo -u oracle -H sh -c "echo "export ORACLE_BASE=$ORACLE_BASE" >>  ~oracle/.bash_profile"
+sudo -u oracle -H sh -c "echo "export ORACLE_HOME=\$ORACLE_BASE/product/11.2.0/db_1" >> ~oracle/.bash_profile"
+sudo -u oracle -H sh -c "echo "export ORACLE_SID=$ORACLE_SID " >>  ~oracle/.bash_profile"
+sudo -u oracle -H sh -c "echo "PATH=\$PATH:\$ORACLE_HOME/bin/" >>  ~oracle/.bash_profile"
 
 ## disable selinux
+if [[ $DEBUG -ne 0 ]] ; then echo "disabling SELinux"; fi
+#first disable SElinux until boot
+sudo setenforce  0
+# now make it Fixed
 FILE=/etc/selinux/config
-sudo cp  $FILE $FILE.orig
-echo "disabling SELinux"
-sudo cp $FILE /tmp
-sudo cat << EOF > $FILE
-echo
+# create backup
+  sudo cp  $FILE $FILE.orig
+# create new selinux/config file
+cat << EOF > $TEMP_LOCATION/config
 # This file controls the state of SELinux on the system.
 # SELINUX= can take one of these three values:
 #     enforcing - SELinux security policy is enforced.
@@ -71,16 +79,20 @@ SELINUX=disabled
 #     mls - Multi Level Security protection.
 SELINUXTYPE=targeted
 EOF
+sudo cp  $TEMP_LOCATION/config $FILE
 
 ## create ORACLE_BASE
 if [[ $DEBUG -ne 0 ]] ; then echo "Create  oracle base"; fi
-sudo -H mkdir -p $ORACLE_BASE/product/11.2.0/
-sudo -H mkdir chown -R oracle:oinstall  $ORACLE_BASE
-sudo -H mkdir chmod -R 775 $ORACLE_BASE
+ORACLE_MOUNT_POINT=`echo $ORACLE_BASE  |cut -d "/" -f 2`
+sudo sh -c "chown -R oracle:oinstall /$ORACLE_MOUNT_POINT "
+sudo sh -c "mkdir -p $ORACLE_BASE/product/11.2.0/ "
+sudo sh -c "chown -R oracle:oinstall $ORACLE_BASE "
+sudo sh -c "chmod -R 775 $ORACLE_BASE "
 
 ##step 2 run as oracle Install oracle
 ##first create responseFile
 if [[ $DEBUG -ne 0 ]] ; then echo "Create  create responseFile"; fi
+
 echo "" > $TEMP_LOCATION/db11ginstall.rsp
 echo "oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v11_2_0" >> $TEMP_LOCATION/db11ginstall.rsp
 echo "oracle.install.option=INSTALL_DB_SWONLY" >> $TEMP_LOCATION/db11ginstall.rsp
@@ -94,6 +106,6 @@ echo "oracle.install.db.OPER_GROUP=oinstall" >> $TEMP_LOCATION/db11ginstall.rsp
 echo "DECLINE_SECURITY_UPDATES=true" >> $TEMP_LOCATION/db11ginstall.rsp
 
 ##run install
-cd $INSTALL_LOCATION
-./runInstaller -silent -noconfig -responseFile $TEMP_LOCATION/db11ginstall.rsp
+
+sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -responseFile $TEMP_LOCATION/db11ginstall.rsp"
 #########
