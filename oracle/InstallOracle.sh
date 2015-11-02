@@ -8,7 +8,7 @@
 #2. create database instance
 #
 #   8.31.2015 - created by baruch o
-#   2.11.2015 - add sudo
+#   2.11.2015 - add
 #
 #
 #
@@ -20,40 +20,44 @@ PRODUCT_NAME="dialogic ORACLE Install"
 PREINSTELL_RPM_NAME=oracle-rdbms-server-11gR2-preinstall-1.0-3.el7.nouek.x86_64.rpm
 ORACLE_SID=orcl
 DEBUG=1
+INSTALLYUM=0
 ################################
 
-##step 1 run as root prep system
-if [[ $(id -u) -ne 0 ]] ; then echo "Please run as root" ; exit 1 ; fi
+##step 1 run as admin prep system
+if [[ $(id -nu) -ne "admin" ]] ; then echo "Please run as admin" ; exit 1 ; fi
+
 #install pre-install rpm
-if [[ $DEBUG -ne 0 ]] ; then echo "Install yum"; fi
-yum localinstal $INSTALL_LOCATION/$PREINSTELL_RPM_NAME
+if [[ $INSTALLYUM -eq 1 ]] ;
+then echo "Install yum $PREINSTELL_RPM_NAME";
+sudo yum localinstal $INSTALL_LOCATION/$PREINSTELL_RPM_NAME;
+fi
 
 # create user oracle
 if [[ $DEBUG -ne 0 ]] ; then echo "Create user oracle"; fi
-/usr/sbin/groupadd oinstall
-/usr/sbin/groupadd dba
-/usr/sbin/useradd -m -g oinstall -G dba oracle
+sudo /usr/sbin/groupadd oinstall
+sudo /usr/sbin/groupadd dba
+sudo /usr/sbin/useradd -m -g oinstall -G dba oracle
 
-passwd oracle << EOF
+sudo passwd oracle << EOF
 oracle
 oracle
 EOF
 
 # fix ~oracle/.bash_profile
 if [[ $DEBUG -ne 0 ]] ; then echo "fix ~oracle/.bash_profile"; fi
-cp ~oracle/.bash_profile ~oracle/.bash_profile.$(date +%F_%R).old
-echo "##add by $PRODUCT_NAME install "  >> ~oracle/.bash_profile
-echo "export ORACLE_BASE=$ORACLE_BASE" >>  ~oracle/.bash_profile
-echo "export ORACLE_HOME=\$ORACLE_BASE/product/11.2.0/db_1" >> ~oracle/.bash_profile
-echo "export ORACLE_SID=$ORACLE_SID " >>  ~oracle/.bash_profile
-echo "PATH=\$PATH:\$ORACLE_HOME/bin/" >>  ~oracle/.bash_profile
+sudo cp ~oracle/.bash_profile ~oracle/.bash_profile.$(date +%F_%R).old
+sudo echo "##add by $PRODUCT_NAME install "  >> ~oracle/.bash_profile
+sudo echo "export ORACLE_BASE=$ORACLE_BASE" >>  ~oracle/.bash_profile
+sudo echo "export ORACLE_HOME=\$ORACLE_BASE/product/11.2.0/db_1" >> ~oracle/.bash_profile
+sudo echo "export ORACLE_SID=$ORACLE_SID " >>  ~oracle/.bash_profile
+sudo echo "PATH=\$PATH:\$ORACLE_HOME/bin/" >>  ~oracle/.bash_profile
 
 ## disable selinux
 FILE=/etc/selinux/config
-cp  $FILE $FILE.orig
+sudo cp  $FILE $FILE.orig
 echo "disabling SELinux"
-cp $FILE /tmp
-cat << EOF > $FILE
+sudo cp $FILE /tmp
+sudo cat << EOF > $FILE
 echo
 # This file controls the state of SELinux on the system.
 # SELINUX= can take one of these three values:
@@ -69,12 +73,14 @@ SELINUXTYPE=targeted
 EOF
 
 ## create ORACLE_BASE
-mkdir -p $ORACLE_BASE/product/11.2.0/
-chown -R oracle:oinstall  $ORACLE_BASE
-chmod -R 775 $ORACLE_BASE
+if [[ $DEBUG -ne 0 ]] ; then echo "Create  oracle base"; fi
+sudo -H mkdir -p $ORACLE_BASE/product/11.2.0/
+sudo -H mkdir chown -R oracle:oinstall  $ORACLE_BASE
+sudo -H mkdir chmod -R 775 $ORACLE_BASE
 
 ##step 2 run as oracle Install oracle
 ##first create responseFile
+if [[ $DEBUG -ne 0 ]] ; then echo "Create  create responseFile"; fi
 echo "" > $TEMP_LOCATION/db11ginstall.rsp
 echo "oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v11_2_0" >> $TEMP_LOCATION/db11ginstall.rsp
 echo "oracle.install.option=INSTALL_DB_SWONLY" >> $TEMP_LOCATION/db11ginstall.rsp
