@@ -107,5 +107,5 @@ echo "DECLINE_SECURITY_UPDATES=true" >> $TEMP_LOCATION/db11ginstall.rsp
 
 ##run install
 
-sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -responseFile $TEMP_LOCATION/db11ginstall.rsp"
+sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -ignoreSysPrereqs -responseFile $TEMP_LOCATION/db11ginstall.rsp"
 #########
