@@ -39,16 +39,25 @@ oracle
 oracle
 EOF
 
+
 # fix ~oracle/.bash_profile
 if [[ $DEBUG -ne 0 ]] ; then echo "fix ~oracle/.bash_profile"; fi
+FILE=$TEMP_LOCATION/.bash_profile
+
 #make backup
 sudo -u oracle -H sh -c "cp ~oracle/.bash_profile ~oracle/.bash_profile.$(date +%F_%R).old"
+
 # add env for bash
-sudo -u oracle -H sh -c "echo "##add by $PRODUCT_NAME install "  >> ~oracle/.bash_profile"
-sudo -u oracle -H sh -c "echo "export ORACLE_BASE=$ORACLE_BASE" >>  ~oracle/.bash_profile"
-sudo -u oracle -H sh -c "echo "export ORACLE_HOME=\$ORACLE_BASE/product/11.2.0/db_1" >> ~oracle/.bash_profile"
-sudo -u oracle -H sh -c "echo "export ORACLE_SID=$ORACLE_SID " >>  ~oracle/.bash_profile"
-sudo -u oracle -H sh -c "echo "PATH=\$PATH:\$ORACLE_HOME/bin/" >>  ~oracle/.bash_profile"
+cat << EOF > $FILE
+#add by $PRODUCT_NAME install
+export ORACLE_BASE=$ORACLE_BASE
+export ORACLE_HOME=$ORACLE_HOME
+export ORACLE_SID=$ORACLE_SID
+PATH=\$PATH:\$ORACLE_HOME/bin/
+EOF
+#append to ~oracle/.bash_profile
+sudo sh -c "cat $TEMP_LOCATION/.bash_profile >> ~oracle/.bash_profile"
+
 
 ## disable selinux
 if [[ $DEBUG -ne 0 ]] ; then echo "disabling SELinux"; fi

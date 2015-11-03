@@ -66,13 +66,23 @@ oracle.install.db.config.asm.ASMSNMPPassword=
 MYORACLESUPPORT_USERNAME=
 MYORACLESUPPORT_PASSWORD=
 SECURITY_UPDATES_VIA_MYORACLESUPPORT=false
+DECLINE_SECURITY_UPDATES=true
+PROXY_HOST=
+PROXY_PORT=
+PROXY_USER=
+PROXY_PWD=
+PROXY_REALM=
+COLLECTOR_SUPPORTHUB_URL=
+oracle.installer.autoupdates.option=SKIP_UPDATES
+oracle.installer.autoupdates.downloadUpdatesLoc=
+AUTOUPDATES_MYORACLESUPPORT_USERNAME=
+AUTOUPDATES_MYORACLESUPPORT_PASSWORD=
 EOF
-
 #fix responseFile premition
 sudo chmod 777 $FILE
 ##run install
 if [[ $DEBUG -ne 0 ]] ; then echo "run install"; fi
-sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -ignoreSysPrereqs -responseFile $TEMP_LOCATION/db11ginstall.rsp"
+sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -ignoreSysPrereqs -ignorePrereq -responseFile $TEMP_LOCATION/db11ginstall.rsp"
 #run root.sh
 if [[ $DEBUG -ne 0 ]] ; then echo "run root.sh as root"; fi
 sudo -H sh -c $ORACLE_HOME/root.sh
