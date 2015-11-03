@@ -1,28 +1,19 @@
 #! /bin/bash -x
 #
-# Install oracle
+# PreInstall oracle database
 #
 # description:
 #         this script need to run by admin user
-#1. install oracle software
-#2. create database instance
 #
-#   8.31.2015 - created by baruch o
-#   2.11.2015 - add
+#
+#
+#
+#   3.11.2015 - created by baruch o
 #
 #
 #
 ##############GLOBAL PARAM#################
-INSTALL_LOCATION=/u01/InstallPack/database
-ORACLE_BASE=/u01/app/oracle/
-TEMP_LOCATION=/tmp/
-PRODUCT_NAME="dialogic ORACLE Install"
-PREINSTELL_RPM_NAME=oracle-rdbms-server-11gR2-preinstall-1.0-3.el7.nouek.x86_64.rpm
-ORACLE_SID=orcl
-DEBUG=1
-INSTALLYUM=0
-LOG_FILE=/tmp/InsatllOracle_$(date +%F_%R).log
-INSTALL_USER=admin
+. Config.conf
 #############################################
 
 ##step 1 run as admin prep system
@@ -81,6 +72,7 @@ SELINUX=disabled
 #     mls - Multi Level Security protection.
 SELINUXTYPE=targeted
 EOF
+#replace orig file
 sudo cp  $TEMP_LOCATION/config $FILE
 
 ## create ORACLE_BASE
@@ -90,24 +82,3 @@ sudo sh -c "chown -R oracle:oinstall /$ORACLE_MOUNT_POINT "
 sudo sh -c "mkdir -p $ORACLE_BASE/product/11.2.0/ "
 sudo sh -c "chown -R oracle:oinstall $ORACLE_BASE "
 sudo sh -c "chmod -R 775 $ORACLE_BASE "
-
-##step 2 run as oracle Install oracle
-##first create responseFile
-if [[ $DEBUG -ne 0 ]] ; then echo "Create  create responseFile"; fi
-
-echo "" > $TEMP_LOCATION/db11ginstall.rsp
-echo "oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v11_2_0" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "oracle.install.option=INSTALL_DB_SWONLY" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "UNIX_GROUP_NAME=oinstall" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "INVENTORY_LOCATION=$ORACLE_BASE/OraInventory" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "ORACLE_HOME=$ORACLE_BASE/product/11.2.0/template" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "ORACLE_BASE=$ORACLE_BASE" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "oracle.install.db.InstallEdition=EE" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "oracle.install.db.DBA_GROUP=dba" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "oracle.install.db.OPER_GROUP=oinstall" >> $TEMP_LOCATION/db11ginstall.rsp
-echo "DECLINE_SECURITY_UPDATES=true" >> $TEMP_LOCATION/db11ginstall.rsp
-##run install
-if [[ $DEBUG -ne 0 ]] ; then echo "run install"; fi
-sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -ignoreSysPrereqs -responseFile $TEMP_LOCATION/db11ginstall.rsp"
-#run root.sh
-sudo -H sh -c $ORACLE_HOME/root.sh
