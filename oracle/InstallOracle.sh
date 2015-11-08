@@ -9,19 +9,17 @@
 #
 #   8.31.2015 - created by baruch o
 #   2.11.2015 - add
-#
+#   8.11.2015 - fix to run as oracle
 #
 #
 ##############GLOBAL PARAM#################
 . Config.conf
 #############################################
 
-##step 1 run as admin prep system
-if [[ $(id -nu) -ne $INSTALL_USER ]] ; then echo "Please run as admin" ; exit 1 ; fi
 
 ##step 2 run as oracle Install oracle
 ##first create responseFile
-if [[ $DEBUG -ne 0 ]] ; then echo "Create  create responseFile"; fi
+if [[ $DEBUG -ne 0 ]] ; then echo "create responseFile"; fi
 FILE=$TEMP_LOCATION/db11ginstall.rsp
 cat << EOF > $FILE
 oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v11_2_0
@@ -82,7 +80,15 @@ EOF
 sudo chmod 777 $FILE
 ##run install
 if [[ $DEBUG -ne 0 ]] ; then echo "run install"; fi
-sudo -u oracle -H sh -c "cd $INSTALL_LOCATION ;./runInstaller -silent -noconfig -ignoreSysPrereqs -ignorePrereq -responseFile $TEMP_LOCATION/db11ginstall.rsp"
-#run root.sh
-if [[ $DEBUG -ne 0 ]] ; then echo "run root.sh as root"; fi
-sudo -H sh -c $ORACLE_HOME/root.sh
+cd $INSTALL_LOCATION
+./runInstaller -silent -noconfig -ignoreSysPrereqs -ignorePrereq -responseFile $TEMP_LOCATION/db11ginstall.rsp &
+
+
+#test for install Successfully ending
+echo "Waiting  for install Successfully end"
+wait
+#LOG=`ls -1tr  /u01/app/oraInventory/logs/ |tail -1`
+#tail -f $LOG | while read LOGLINE
+#do
+   #[[ "${LOGLINE}" == *"Successfully Setup Software."* ]] && pkill -P $$ tail
+#done
